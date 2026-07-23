@@ -1,41 +1,46 @@
-version: "2"
+version: "3"
 
 services:
   wifimap:
-    image: znerox/wifimap
-    hostname: wifimap
+    build: ./wifimap
     container_name: wifimap
-    restart: always
+    restart: unless-stopped
     ports:
-      - 80:80
+      - "80:80"
     depends_on:
-        - wifimap-mysql
+      wifimap-mysql:
+        condition: service_healthy
     environment:
-        - server=wifimap-mysql
-        - database=wifimap
-        - username=root
-        - password=password
-        - environment=release
-
+      DB_SERVER: wifimap-mysql
+      DB_NAME: ${MYSQL_DATABASE}
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      APP_ENV: release
 
   wifimap-phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    hostname: wifimap-phpmyadmin
+    image: phpmyadmin:5.2
     container_name: wifimap-phpmyadmin
-    restart: always
+    restart: unless-stopped
     ports:
-        - 8080:80
+      - "8080:80"
     environment:
-        PMA_HOST: wifimap-mysql
+      PMA_HOST: wifimap-mysql
     depends_on:
-        - wifimap-mysql
+      - wifimap-mysql
 
   wifimap-mysql:
-    image: mysql
-    hostname: wifimap-mysql
+    image: mysql:8.0
     container_name: wifimap-mysql
-    restart: always
+    restart: unless-stopped
     volumes:
-        - ./wifimap_db_data:/var/lib/mysql
+      - ./wifimap_db_data:/var/lib/mysql
     environment:
-        MYSQL_ROOT_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
