@@ -2,3 +2,4 @@
 /wifimap/tools/php/uploads
 **/.dockerignore
 *.csv
+*.env
